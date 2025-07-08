@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Editar' if orden else 'Nueva' }} Orden de Servicio{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold">{{ '✏️ Editar' if orden else '➕ Nueva' }} Orden de Servicio</h2>
+      <p class="text-muted">Complete la información requerida para registrar la orden.</p>
+    </div>
+  </div>
+
+  <form method="post">
+    <div class="mb-3">
+      <label for="direccion" class="form-label">📍 Dirección:</label>
+      <input type="text" class="form-control" id="direccion" name="direccion" required
+             value="{{ orden.direccion if orden else '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="cliente_id" class="form-label">👤 Cliente:</label>
+      <select class="form-select" id="cliente_id" name="cliente_id" required>
+        <option value="" disabled {% if not orden %}selected{% endif %}>Seleccione un cliente</option>
+        {% for cliente in clientes %}
+          <option value="{{ cliente.id }}" {% if orden and orden.cliente_id == cliente.id %}selected{% endif %}>
+            {{ cliente.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="camion_id" class="form-label">🛻 Camión:</label>
+      <select class="form-select" id="camion_id" name="camion_id" required>
+        <option value="" disabled {% if not orden %}selected{% endif %}>Seleccione un camión</option>
+        {% for camion in camiones %}
+          <option value="{{ camion.id }}" {% if orden and orden.camion_id == camion.id %}selected{% endif %}>
+            {{ camion.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="chofer_id" class="form-label">👨‍✈️ Chofer:</label>
+      <select class="form-select" id="chofer_id" name="chofer_id" required>
+        <option value="" disabled {% if not orden %}selected{% endif %}>Seleccione un chofer</option>
+        {% for chofer in choferes %}
+          <option value="{{ chofer.id }}" {% if orden and orden.chofer_id == chofer.id %}selected{% endif %}>
+            {{ chofer.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="estado" class="form-label">📌 Estado:</label>
+      <select class="form-select" id="estado" name="estado" required>
+        {% set estados = ['Pendiente', 'En proceso', 'Completada', 'Cancelada'] %}
+        {% for estado_option in estados %}
+          <option value="{{ estado_option }}" {% if orden and orden.estado == estado_option %}selected{% endif %}>
+            {{ estado_option }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="costo" class="form-label">💲 Costo ($):</label>
+      <input type="number" step="0.01" min="0" class="form-control" id="costo" name="costo" required
+             value="{{ orden.costo if orden else '' }}">
+    </div>
+
+    <div class="d-flex justify-content-between">
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left-circle"></i> Cancelar
+      </a>
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-save"></i> Guardar
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

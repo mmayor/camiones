@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ 'Editar' if cliente else 'Nuevo' }} Cliente{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">{{ '✏️ Editar' if cliente else '➕ Nuevo' }} Cliente</h2>
+
+  <form method="post">
+    <div class="mb-3">
+      <label for="nombre" class="form-label">Nombre:</label>
+      <input type="text" class="form-control" id="nombre" name="nombre" required value="{{ cliente.nombre if cliente else '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">Email:</label>
+      <input type="email" class="form-control" id="email" name="email" value="{{ cliente.email if cliente else '' }}">
+    </div>
+
+    <div class="mb-3">
+      <label for="telefono" class="form-label">Teléfono:</label>
+      <input type="text" class="form-control" id="telefono" name="telefono" value="{{ cliente.telefono if cliente else '' }}">
+    </div>
+
+    <div class="d-flex justify-content-between">
+      <a href="{{ url_for('listar_clientes') }}" class="btn btn-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-success">💾 Guardar</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

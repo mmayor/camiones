@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block title %}Camiones{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold">🛻 Camiones</h2>
+    <p class="text-muted">Listado de Camiones registrados en el sistema.</p>
+
+  </div>
+    
+    <a href="{{ url_for('nuevo_camion') }}" class="btn btn-primary">
+      <i class="bi bi-truck"></i> Nuevo Camión
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Nombre</th>
+          <th>Latitud</th>
+          <th>Longitud</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for camion in camiones %}
+        <tr>
+          <td>{{ camion.nombre }}</td>
+          <td>{{ camion.lat or "—" }}</td>
+          <td>{{ camion.lon or "—" }}</td>
+          <td>
+            <a href="{{ url_for('editar_camion', id=camion.id) }}" class="btn btn-sm btn-warning me-1">
+              <i class="bi bi-pencil-fill"></i>
+            </a>
+            <form action="{{ url_for('eliminar_camion', id=camion.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar camión?');">
+    <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
+</form>
+                
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+
+<a href="{{ url_for('eliminar_cliente', id=cliente.id) }}" class="btn btn-sm btn-danger" 
+             onclick="return confirm('¿Eliminar cliente?');">🗑️ Eliminar</a>
+
+
+
+<

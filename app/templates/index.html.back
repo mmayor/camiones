@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tracking de Órdenes de Servicio</title>
+</head>
+<body>
+    <h1>🚛 Tracking de Órdenes de Servicio</h1>
+
+    <!-- Link para agregar nuevas órdenes -->
+    <p>
+        <a href="{{ url_for('nueva_orden') }}">➕ Crear nueva orden de servicio</a>
+    </p>
+
+    <h2>📋 Órdenes de Servicio</h2>
+    <table border="1" cellpadding="5" cellspacing="0">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Dirección</th>
+                <th>Estado</th>
+                <th>Costo</th>
+                <th>Cliente Aignado</th>
+                <th>Camión Asignado</th>
+                <th>Actualizar Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for orden in ordenes %}
+            <tr>
+                <td>{{ orden.id }}</td>
+                <td>{{ orden.direccion }}</td>
+                <td>{{ orden.estado }}</td>
+                <td>${{ "%.2f"|format(orden.costo) }}</td>
+                <td>{{ orden.cliente.nombre if orden.cliente else 'Sin cliente' }}</td>
+                <td>{{ orden.camion.nombre if orden.camion else 'Sin asignar' }}</td>
+                <td>
+                    <form action="{{ url_for('actualizar_orden', id=orden.id) }}" method="post">
+                        <select name="estado">
+                            <option value="Pendiente" {% if orden.estado == "Pendiente" %}selected{% endif %}>Pendiente</option>
+                            <option value="En proceso" {% if orden.estado == "En proceso" %}selected{% endif %}>En proceso</option>
+                            <option value="Completada" {% if orden.estado == "Completada" %}selected{% endif %}>Completada</option>
+                            <option value="Cancelada" {% if orden.estado == "Cancelada" %}selected{% endif %}>Cancelada</option>
+                        </select>
+                        <button type="submit">Actualizar</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>🚚 Camiones</h2>
+<p>
+    <a href="{{ url_for('nuevo_camion') }}">➕ Agregar nuevo camión</a>
+</p>
+<ul>
+    {% for camion in camiones %}
+    <li>
+        {{ camion.nombre }} (ID: {{ camion.id }})<br>
+        Lat: {{ camion.lat }}, Lon: {{ camion.lon }}<br>
+        <a href="{{ url_for('editar_camion', id=camion.id) }}">✏️ Editar</a> |
+        <form action="{{ url_for('eliminar_camion', id=camion.id) }}" method="post" style="display:inline;">
+            <button type="submit" onclick="return confirm('¿Estás seguro de eliminar este camión?')">🗑️ Eliminar</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+
+<h2>👥 Clientes</h2>
+<p>
+    <a href="{{ url_for('nuevo_cliente') }}">➕ Agregar nuevo cliente</a>
+</p>
+<ul>
+    {% for cliente in clientes %}
+    <li>
+        {{ cliente.nombre }} (ID: {{ cliente.id  }})<br>
+        <a href="{{ url_for('editar_cliente', id=cliente.id) }}">✏️ Editar</a> |
+        <form action="{{ url_for('eliminar_cliente', id=cliente.id) }}" method="post" style="display:inline;">
+            <button type="submit" onclick="return confirm('¿Eliminar este cliente?')">🗑️ Eliminar</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+
+<h2>🧾 Facturas</h2>
+<p><a href="{{ url_for('nueva_factura') }}">➕ Crear nueva factura</a></p>
+<ul>
+    {% for factura in facturas %}
+    <li>
+        {{ factura.fecha }} – ${{ "%.2f"|format(factura.monto_total) }} –
+        Cliente: {{ factura.cliente.nombre }}<br>
+        {% if factura.orden %}
+        Orden vinculada: {{ factura.orden.id }} – {{ factura.orden.direccion }}<br>
+        {% endif %}
+        <a href="{{ url_for('editar_factura', id=factura.id) }}">✏️ Editar</a> |
+        <form action="{{ url_for('eliminar_factura', id=factura.id) }}" method="post" style="display:inline;">
+            <button type="submit" onclick="return confirm('¿Eliminar esta factura?')">🗑️ Eliminar</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>

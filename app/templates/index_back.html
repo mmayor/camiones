@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+{% block title %}Órdenes de Servicio{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📦 Órdenes de Servicio</h2>
+    <a href="{{ url_for('nueva_orden') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> Nueva Orden
+    </a>
+  </div>
+
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>ID</th><th>Dirección</th><th>Cliente</th><th>Chofer</th><th>Camión</th>
+        <th>Costo</th><th>Monto Pagado</th><th>Estado</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for orden in ordenes %}
+      <tr>
+        <td>{{ orden.id }}</td>
+        <td>{{ orden.direccion }}</td>
+        <td>{{ orden.cliente.nombre if orden.cliente else '—' }}</td>
+        <td>{{ orden.chofer.nombre if orden.chofer else '—' }}</td>
+        <td>{{ orden.camion.nombre if orden.camion else '—' }}</td>
+        
+        <td>${{ "%.2f"|format(orden.costo_calculado) }}</td>
+         <td>
+            ${{ "%.2f"|format(orden.facturas | sum(attribute='monto_pagado')) }}
+        </td>
+        
+        <td>{{ orden.estado }}</td>
+        <td>
+          <a href="{{ url_for('editar_orden', id=orden.id) }}" class="btn btn-sm btn-warning me-1">
+            <i class="bi bi-pencil-fill"></i>
+          </a>
+          
+          <a href="{{ url_for('imprimir_orden_pdf', id=orden.id) }}" target="_blank" class="btn btn-sm btn-dark me-1" title="Imprimir Orden y Facturas">
+            🧾
+            </a>
+
+            <a href="{{ url_for('enviar_orden_email', id=orden.id) }}" 
+                class="btn btn-sm btn-success me-1" 
+                title="Enviar PDF por Email">
+                <i class="bi bi-envelope-fill"></i>
+                </a>
+          
+          <a href="{{ url_for('enviar_ubicacion_chofer', id=orden.id) }}" class="btn btn-sm btn-info me-1">
+            <i class="bi bi-send-fill"></i>
+          </a>
+
+          
+
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+document.querySelectorAll('.estado-select').forEach(select => {
+  select.addEventListener('change', function () {
+    const ordenId = this.dataset.id;
+    const estado = this.value;
+
+    fetch(`/api/orden/${ordenId}/estado`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ estado })
+    })
+    .then(response => {
+      if (!response.ok) throw new Error("Error al actualizar estado");
+      return response.json();
+    })
+    .then(data => {
+      console.log("✅ Estado actualizado:", data.estado);
+      // Puedes mostrar un pequeño mensaje si quieres
+    })
+    .catch(error => {
+      console.error("❌ Error:", error);
+      alert("Error al actualizar el estado.");
+    });
+  });
+});
+</script>
+
+
+{% endblock %}
+

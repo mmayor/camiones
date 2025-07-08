@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+{% block title %}Facturas{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+        <h2  class="fw-bold">📄 Facturas</h2>
+        <p class="text-muted">Listado de facturas registradas en el sistema.</p>
+    </div>
+  
+  <a href="{{ url_for('nueva_factura') }}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> Nueva Factura</a>
+
+    </div>
+    
+
+  <table class="table table-bordered table-striped">
+      <thead class="table-light">
+          <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Orden Asociada</th>
+              <th>Fecha</th>
+              <th>Vencimiento</th>
+              <th>Total</th>
+              <th>Monto Pagado</th>
+              <th>Acciones</th>
+          </tr>
+      </thead>
+      <tbody>
+          {% for factura in facturas %}
+          <tr>
+              <td>{{ factura.id }}</td>
+              <td>{{ factura.cliente.nombre }}</td>
+              <td>{{ factura.orden.id if factura.orden else 'N/A' }}</td>
+              <td>{{ factura.fecha }}</td>
+              <td>{{ factura.due_date }}</td>
+              <td>${{ "%.2f"|format(factura.monto_total) }}</td>
+              <td>
+
+                    <form method="POST" action="{{ url_for('actualizar_monto_pagado', id=factura.id) }}" onsubmit="return confirm('¿Estás seguro que deseas guardar este cambio?')">
+                    <input type="number" step="0.01" min="0" name="monto_pagado" value="{{ factura.monto_pagado or 0 }}" style="width: 80px;">
+                    <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                </form>
+
+              </td>
+              
+              <td>
+                  <a href="{{ url_for('editar_factura', id=factura.id) }}" class="btn btn-sm btn-warning me-1" title="Editar">✏️</a>
+                  <form action="{{ url_for('eliminar_factura', id=factura.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('¿Seguro que quieres eliminar esta factura?');">
+                      <button type="submit" class="btn btn-sm btn-danger me-1" title="Eliminar">❌</button>
+                  </form>
+                  
+              </td>
+          </tr>
+          {% endfor %}
+      </tbody>
+  </table>
+</div>
+
+
+
+{% endblock %}
+
+
+

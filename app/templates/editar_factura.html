@@ -1,0 +1,118 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Editar Factura' if factura else 'Nueva Factura' }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ '✏️ Editar Factura' if factura else '🧾 Nueva Factura' }}</h2>
+
+    <form method="POST">
+
+        <div class="mb-3">
+            <label for="fecha" class="form-label">Fecha:</label>
+            <input type="date" class="form-control" id="fecha" name="fecha"
+                   value="{{ factura.fecha if factura else '' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="due_date" class="form-label">Fecha de vencimiento:</label>
+            <input type="date" class="form-control" id="due_date" name="due_date"
+                   value="{{ factura.due_date if factura else '' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="cliente_id" class="form-label">Cliente:</label>
+            <select class="form-select" name="cliente_id" required>
+                {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}" {% if factura and cliente.id == factura.cliente_id %}selected{% endif %}>
+                        {{ cliente.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="orden_id" class="form-label">Orden de Servicio (opcional):</label>
+            <select class="form-select" name="orden_id">
+                <option value="">-- Ninguna --</option>
+                {% for orden in ordenes %}
+                    <option value="{{ orden.id }}" {% if factura and factura.orden_id == orden.id %}selected{% endif %}>
+                        #{{ orden.id }} - {{ orden.direccion }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <h3>🧾 Ítems de la Factura</h3>
+
+        <table id="items" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Descripción</th>
+                    <th>Precio Unitario</th>
+                    <th>Cantidad</th>
+                    <th>Monto</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if factura and factura.items %}
+                    {% for item in factura.items %}
+                    <tr>
+                        <td><input type="text" name="item" required value="{{ item.nombre }}"></td>
+                        <td><input type="text" name="descripcion" value="{{ item.descripcion }}"></td>
+                        <td><input type="number" name="precio_unitario" step="0.01" required oninput="updateMonto(this)" value="{{ item.precio_unitario }}"></td>
+                        <td><input type="number" name="cantidad" min="1" required oninput="updateMonto(this)" value="{{ item.cantidad }}"></td>
+                        <td class="monto">{{ (item.precio_unitario * item.cantidad) | round(2) }}</td>
+                        <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarFila(this)">Eliminar</button></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td><input type="text" name="item" required></td>
+                        <td><input type="text" name="descripcion"></td>
+                        <td><input type="number" name="precio_unitario" step="0.01" required oninput="updateMonto(this)"></td>
+                        <td><input type="number" name="cantidad" min="1" value="1" required oninput="updateMonto(this)"></td>
+                        <td class="monto">0.00</td>
+                        <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarFila(this)">Eliminar</button></td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <button type="button" class="btn btn-secondary mb-3" onclick="agregarFila()">+ Agregar ítem</button>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">
+                {{ '💾 Guardar Cambios' if factura else '💾 Guardar Factura' }}
+            </button>
+            <a href="{{ url_for('listar_facturas') }}" class="btn btn-danger">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+function agregarFila() {
+    const tabla = document.querySelector("#items tbody");
+    const fila = tabla.rows[0].cloneNode(true);
+    fila.querySelectorAll("input").forEach(input => input.value = input.name === 'cantidad' ? 1 : '');
+    fila.querySelector(".monto").textContent = "0.00";
+    tabla.appendChild(fila);
+}
+
+function eliminarFila(btn) {
+    const tabla = document.querySelector("#items tbody");
+    if (tabla.rows.length > 1) {
+        btn.closest("tr").remove();
+    }
+}
+
+function updateMonto(input) {
+    const fila = input.closest("tr");
+    const precio = parseFloat(fila.querySelector("input[name='precio_unitario']").value) || 0;
+    const cantidad = parseInt(fila.querySelector("input[name='cantidad']").value) || 0;
+    const monto = precio * cantidad;
+    fila.querySelector(".monto").textContent = monto.toFixed(2);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Orden de Servicio #{{ orden.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            color: #007bff;
+            margin: 0;
+            font-size: 24px;
+        }
+
+                .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            text-align: left;
+        }
+
+        .logo-container img {
+            max-height: 100px;
+            width: auto;
+        }
+
+        .company-info h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #007bff;
+        }
+
+        .company-info p {
+            margin: 4px 0 0 0;
+            font-size: 13px;
+            color: #333;
+        }
+
+        hr {
+            border: 0;
+            border-top: 2px solid #007bff;
+            margin: 20px 0;
+        }
+
+        .info {
+            margin-bottom: 30px;
+        }
+
+        .info p {
+            margin: 4px 0;
+        }
+
+        h3 {
+            margin-top: 40px;
+            color: #007bff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+
+        thead {
+            background-color: #f0f0f0;
+        }
+
+        tfoot td {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            margin-top: 50px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="logo-container">
+        <img src="{{ logo_url }}" alt="Logo">
+        <div class="company-info">
+            <h2>DEMOLITION AND REMOVAL SERVICES CORP</h2>
+            <p>7262 NW 3 ST, Miami FL 33126<br>
+            Tel: (786) 348-5040<br>
+            Email: alex@gmail.com</p>
+        </div>
+    </div>
+    <hr>
+</div>
+
+
+<div class="info">
+    <h3>📦 Orden de Servicio #{{ orden.id }}</h3>
+    <p><strong>Dirección:</strong> {{ orden.direccion }}</p>
+    <p><strong>Estado:</strong> {{ orden.estado }}</p>
+    <p><strong>Cliente:</strong> {{ orden.cliente.nombre if orden.cliente else "—" }}</p>
+    <p><strong>Chofer:</strong> {{ orden.chofer.nombre if orden.chofer else "—" }}</p>
+    <p><strong>Camión:</strong> {{ orden.camion.nombre if orden.camion else "—" }}</p>
+    <p><strong>Costo Total Estimado:</strong> ${{ "%.2f"|format(orden.costo_calculado) }}</p>
+</div>
+
+{% if orden.facturas %}
+    {% for factura in orden.facturas %}
+    <h3>🧾 Factura #{{ factura.id }}</h3>
+    <div class="info">
+        <p><strong>Fecha:</strong> {{ factura.fecha.strftime('%Y-%m-%d') }}</p>
+        <p><strong>Vencimiento:</strong> {{ factura.due_date.strftime('%Y-%m-%d') if factura.due_date else "—" }}</p>
+        <p><strong>Email Cliente:</strong> {{ factura.cliente.email if factura.cliente and factura.cliente.email else "—" }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Descripción</th>
+                <th>Precio Unitario</th>
+                <th>Cantidad</th>
+                <th>Monto</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in factura.items %}
+            <tr>
+                <td>{{ item.nombre }}</td>
+                <td>{{ item.descripcion }}</td>
+                <td>${{ "%.2f"|format(item.precio_unitario) }}</td>
+                <td>{{ item.cantidad }}</td>
+                <td>${{ "%.2f"|format(item.precio_unitario * item.cantidad) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="4">Subtotal</td>
+                <td>${{ "%.2f"|format(factura.monto_total) }}</td>
+            </tr>
+            <tr>
+                <td colspan="4">Monto Pagado</td>
+                <td>${{ "%.2f"|format(factura.monto_pagado or 0) }}</td>
+            </tr>
+            <tr>
+                <td colspan="4">Balance Pendiente</td>
+                <td>${{ "%.2f"|format(factura.monto_total - (factura.monto_pagado or 0)) }}</td>
+            </tr>
+        </tfoot>
+    </table>
+    {% endfor %}
+{% else %}
+    <p>No hay facturas asociadas a esta orden.</p>
+{% endif %}
+
+{% if orden.facturas %}
+<h3>📊 Resumen de Facturas</h3>
+
+{% set ns = namespace(total_total=0, total_pagado=0) %}
+
+<table>
+    <thead>
+        <tr>
+            <th># Factura</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Pagado</th>
+            <th>Balance</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for factura in orden.facturas %}
+        {% set balance = factura.monto_total - (factura.monto_pagado or 0) %}
+        {% set ns.total_total = ns.total_total + factura.monto_total %}
+        {% set ns.total_pagado = ns.total_pagado + (factura.monto_pagado or 0) %}
+        <tr>
+            <td>{{ factura.id }}</td>
+            <td>{{ factura.fecha.strftime('%Y-%m-%d') }}</td>
+            <td>${{ "%.2f"|format(factura.monto_total) }}</td>
+            <td>${{ "%.2f"|format(factura.monto_pagado or 0) }}</td>
+            <td>${{ "%.2f"|format(balance) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="2"><strong>Totales</strong></td>
+            <td><strong>${{ "%.2f"|format(ns.total_total) }}</strong></td>
+            <td><strong>${{ "%.2f"|format(ns.total_pagado) }}</strong></td>
+            <td><strong>${{ "%.2f"|format(ns.total_total - ns.total_pagado) }}</strong></td>
+        </tr>
+    </tfoot>
+</table>
+{% endif %}
+
+
+<div class="footer">
+    Gracias por su preferencia. Para consultas o pagos, contáctenos.<br>
+    DEMOLITION AND REMOVAL SERVICES CORP · Miami FL
+</div>
+
+</body>
+</html>

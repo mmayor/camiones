@@ -1,0 +1,417 @@
+'''
+@app.route("/orden/nueva", methods=["GET", "POST"])
+def nueva_orden():
+    if request.method == "POST":
+        direccion = request.form["direccion"]
+        costo = float(request.form["costo"])
+        camion_id = int(request.form["camion_id"]) if request.form.get("camion_id") else None
+        cliente_id = int(request.form["cliente_id"]) if request.form.get("cliente_id") else None
+        chofer_id = int(request.form["chofer_id"]) if request.form.get("chofer_id") else None
+        orden = OrdenServicio(direccion=direccion, costo=costo, camion_id=camion_id, cliente_id=cliente_id, chofer_id=chofer_id)
+        db.session.add(orden)
+        db.session.commit()
+        return redirect(url_for("index"))
+    camiones = Camion.query.all()
+    clientes = Cliente.query.all()
+    choferes = Chofer.query.all()
+    return render_template("nueva_orden.html", camiones=camiones, clientes=clientes, choferes=choferes)
+
+'''
+
+
+
+'''
+@app.route('/factura/<int:id>/actualizar_monto_pagado', methods=['POST'])
+def actualizar_monto_pagado(id):
+    factura = Factura.query.get_or_404(id)
+    nuevo_monto = request.form.get('monto_pagado')
+    try:
+        factura.monto_pagado = float(nuevo_monto)
+        db.session.commit()
+        flash('Monto pagado actualizado.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al actualizar monto.', 'danger')
+    return redirect(url_for('listar_facturas'))
+
+'''
+
+'''
+@app.route('/orden/<int:id>/pdf')
+def imprimir_orden_pdf(id):
+    orden = OrdenServicio.query.get_or_404(id)
+    return generar_pdf_orden(orden)
+
+def generar_pdf_orden(orden):
+    
+     # Ruta absoluta al logo
+    logo_path = os.path.join(current_app.root_path, 'static', 'img', 'logo.png')
+    logo_url = f'file://{logo_path}'
+
+    html = render_template('orden_pdf.html', orden=orden, logo_url=logo_url)
+    pdf = HTML(string=html).write_pdf()
+    html_out = render_template('orden_pdf.html', orden=orden, logo_url=logo_url)
+    pdf = HTML(string=html_out).write_pdf()
+
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=orden_{orden.id}.pdf'
+    return response
+'''
+
+'''
+@app.route('/orden/<int:id>/pdf')
+def imprimir_orden_pdf(id):
+    orden = OrdenServicio.query.get_or_404(id)
+    return generar_pdf_orden(orden)
+
+def generar_pdf_orden(orden):
+    # Ruta absoluta al logo (para uso en PDF con file://)
+    logo_path = os.path.join(current_app.root_path, 'static', 'img', 'logo.png')
+    logo_url = f'file://{logo_path}'
+
+    html = render_template('orden_pdf.html', orden=orden, logo_url=logo_url)
+    pdf = HTML(string=html).write_pdf()
+
+    response = make_response(pdf)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'inline; filename=orden_{orden.id}.pdf'
+    return response
+
+'''
+
+
+
+'''
+@app.route("/orden/<int:id>/editar", methods=["GET", "POST"])
+def editar_orden(id):   
+    orden = OrdenServicio.query.get_or_404(id)
+    clientes = Cliente.query.all()
+    camiones = Camion.query.all()
+    choferes = Chofer.query.all()
+
+    if request.method == "POST":
+        orden.direccion = request.form["direccion"]
+        orden.cliente_id = request.form["cliente_id"]
+        orden.camion_id = request.form["camion_id"]
+        orden.chofer_id = request.form["chofer_id"]
+        orden.estado = request.form["estado"]
+        orden.costo = float(request.form["costo"])
+        db.session.commit()
+        return redirect(url_for("index"))
+
+    return render_template("editar_orden.html", orden=orden, clientes=clientes, camiones=camiones, choferes=choferes)
+
+
+'''
+
+
+'''
+@app.route('/api/orden/<int:id>/estado', methods=['POST'])
+def api_actualizar_estado(id):
+    orden = OrdenServicio.query.get_or_404(id)
+    data = request.get_json()
+
+    if 'estado' not in data:
+        return jsonify({"error": "Falta el campo 'estado'"}), 400
+
+    orden.estado = data['estado']
+    db.session.commit()
+    return jsonify({"success": True, "estado": orden.estado})
+
+'''
+
+
+
+'''
+@app.route("/orden/<int:id>/editar", methods=["GET", "POST"])
+def editar_orden(id):
+    orden = OrdenServicio.query.get_or_404(id)
+    estado = request.form.get("estado")
+    if estado:
+        orden.estado = estado
+    db.session.commit()
+    return redirect(url_for("index"))
+'''
+
+'''
+# LAST
+@app.route('/factura/<int:id>/actualizar_monto_pagado', methods=['POST'])
+def actualizar_monto_pagado(id):
+    factura = Factura.query.get_or_404(id)
+    nuevo_monto = request.form.get('monto_pagado')
+
+    monto_anterior = factura.monto_pagado or 0
+
+    try:
+        factura.monto_pagado = float(nuevo_monto)
+        db.session.commit()
+
+        # Si la factura está asociada a una orden, verificar si todas están pagadas
+        if factura.orden:
+            if all((f.monto_pagado or 0) >= (f.monto_total or 0) for f in factura.orden.facturas):
+                factura.orden.estado = 'Completada'
+                factura.monto_pagado = nuevo_monto
+                db.session.commit()
+
+        flash(f'Monto pagado actualizado. ${monto_anterior:.2f} -> ${nuevo_monto:.2f}', 'success')
+
+        # flash('Monto pagado actualizado. ${monto_anterior:.2f} -> ${nuevo_monto:.2f}', 'success')
+        # flash(f"Monto pagado actualizado. Anterior: ${monto_anterior:.2f}, Nuevo: ${nuevo_monto:.2f}", "info")
+        # flash(f'Se actualizó el monto pagado de la factura #{factura.id}: ${monto_anterior:.2f} → ${nuevo_monto:.2f}', 'success')
+
+
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al actualizar monto.', 'danger')
+
+    return redirect(url_for('listar_facturas'))
+
+'''
+
+'''
+@app.route("/factura/nueva", methods=["GET", "POST"])
+def nueva_factura():
+    if request.method == "POST":
+        fecha = datetime.strptime(request.form["fecha"], "%Y-%m-%d").date()
+        due_date = datetime.strptime(request.form["due_date"], "%Y-%m-%d").date()
+        cliente_id = int(request.form["cliente_id"])
+        orden_id = int(request.form["orden_id"])
+
+        factura = Factura(
+            fecha=fecha,
+            due_date=due_date,
+            cliente_id=cliente_id,
+            orden_id=orden_id
+        )
+        db.session.add(factura)
+        db.session.flush()  # Para obtener el ID antes de agregar ítems
+
+        # Supongamos que los ítems vienen como listas desde el form
+        items = zip(
+            request.form.getlist("item"),
+            request.form.getlist("descripcion"),
+            request.form.getlist("precio_unitario"),
+            request.form.getlist("cantidad")
+        )
+
+        for item, descripcion, precio, cantidad in items:
+            detalle = FacturaItem(
+                factura_id=factura.id,
+                item=item,
+                descripcion=descripcion,
+                precio_unitario=float(precio),
+                cantidad=int(cantidad)
+            )
+            db.session.add(detalle)
+
+        db.session.commit()
+        return redirect(url_for("index"))
+
+    clientes = Cliente.query.all()
+    ordenes = OrdenServicio.query.all()
+    return render_template("nueva_factura.html", clientes=clientes, ordenes=ordenes)
+
+
+'''
+
+'''
+@app.route("/orden/<int:id>/enviar")
+def enviar_orden_email(id):
+    orden = OrdenServicio.query.get_or_404(id)
+
+    if not orden.cliente or not orden.cliente.email:
+        flash("Este cliente no tiene correo electrónico registrado.", "warning")
+        return redirect(url_for("index"))
+
+    # Renderiza el HTML para el PDF (usa tu template de orden con resumen de facturas)
+    html = render_template("orden_pdf.html", orden=orden)
+    pdf = HTML(string=html).write_pdf()
+
+    msg = Message(
+        subject=f'Orden de Servicio #{orden.id}',
+        recipients=[orden.cliente.email],
+        body=f'Estimado/a {orden.cliente.nombre},\n\nAdjunto encontrará su orden de servicio #{orden.id} con el detalle de facturación.'
+    )
+
+    msg.attach(f'orden_{orden.id}.pdf', 'application/pdf', pdf)
+
+    try:
+        mail.send(msg)
+        flash("Orden de servicio enviada exitosamente al cliente.", "success")
+    except Exception as e:
+        flash(f"Error al enviar el correo: {e}", "danger")
+
+    return redirect(url_for("index"))
+
+'''
+
+'''
+@app.route("/orden/<int:id>/enviar")
+def enviar_orden_email(id):
+    orden = OrdenServicio.query.get_or_404(id)
+
+    if not orden.cliente or not orden.cliente.email:
+        flash("Este cliente no tiene correo electrónico registrado.", "warning")
+        return redirect(url_for("index"))
+
+    # Ruta absoluta al logo
+    logo_path = os.path.join(current_app.root_path, 'static', 'img', 'logo.png')
+    logo_url = f'file://{logo_path}'
+
+    # Renderiza el HTML con logo absoluto
+    html = render_template("orden_pdf.html", orden=orden, logo_url=logo_url)
+    pdf = HTML(string=html, base_url=current_app.root_path).write_pdf()
+
+    msg = Message(
+        subject=f'Orden de Servicio #{orden.id}',
+        recipients=[orden.cliente.email],
+        body=f'Estimado/a {orden.cliente.nombre},\n\nAdjunto encontrará su orden de servicio #{orden.id} con el detalle de facturación.'
+    )
+
+    msg.attach(f'orden_{orden.id}.pdf', 'application/pdf', pdf)
+
+    try:
+        mail.send(msg)
+        flash("Orden de servicio enviada exitosamente al cliente.", "success")
+    except Exception as e:
+        flash(f"Error al enviar el correo: {e}", "danger")
+
+    return redirect(url_for("index"))
+'''
+
+'''
+
+@app.route("/orden/<int:id>/enviar_ubicacion")
+def enviar_ubicacion_chofer(id):
+    orden = OrdenServicio.query.get_or_404(id)
+
+    if not orden.chofer or not orden.chofer.email:
+        flash("Esta orden no tiene chofer asignado o falta su email.", "warning")
+        return redirect(url_for("index"))
+
+    direccion_encoded = orden.direccion.replace(" ", "+")  # Para URL
+    google_maps_link = f"https://www.google.com/maps/search/?api=1&query={direccion_encoded}"
+
+    try:
+        msg = Message(
+            subject=f"📍 Ubicación de la orden #{orden.id}",
+            recipients=[orden.chofer.email]
+        )
+        msg.body = f"""
+Hola {orden.chofer.nombre},
+
+Se te ha asignado la orden #{orden.id}.
+
+Dirección: {orden.direccion}
+Cliente: {orden.cliente.nombre if orden.cliente else '—'}
+
+🔗 Ubicación en Google Maps:
+{google_maps_link}
+
+Por favor, comunícate con el cliente o la base para más detalles.
+
+Gracias.
+        """
+        mail.send(msg)
+        flash("📤 Ubicación enviada al chofer por correo electrónico.", "success")
+    except Exception as e:
+        flash(f"Error al enviar el correo: {e}", "danger")
+
+    return redirect(url_for("index"))
+
+'''
+
+'''
+
+@app.route("/factura/<int:id>/enviar")
+def enviar_factura_email(id):
+    factura = Factura.query.get_or_404(id)
+    
+    if not factura.cliente.email:
+        flash("Este cliente no tiene correo electrónico registrado.", "warning")
+        return redirect(url_for("listar_facturas"))
+
+    # Generar HTML del PDF
+    html = render_template("factura_pdf.html", factura=factura)
+    pdf = HTML(string=html).write_pdf()
+
+    # Crear mensaje
+    msg = Message(subject=f"Factura #{factura.id}",
+                  recipients=[factura.cliente.email])
+    msg.body = f"Hola {factura.cliente.nombre},\nAdjunto te enviamos la factura #{factura.id}."
+    
+    # Adjuntar el PDF
+    msg.attach(f"factura_{factura.id}.pdf", "application/pdf", pdf)
+
+    try:
+        mail.send(msg)
+        flash("Factura enviada exitosamente al cliente.", "success")
+    except Exception as e:
+        flash(f"Error al enviar correo: {e}", "danger")
+
+    return redirect(url_for("listar_facturas"))
+
+'''
+
+
+
+'''
+@app.route("/factura/<int:id>/enviar")
+def enviar_factura_email(id):
+    factura = Factura.query.get_or_404(id)
+    
+    if not factura.cliente.email:
+        flash("Este cliente no tiene correo electrónico registrado.", "warning")
+        return redirect(url_for("listar_facturas"))
+
+    # Generar HTML del PDF
+    html = render_template("factura_pdf.html", factura=factura)
+    pdf = HTML(string=html).write_pdf()
+
+    # Crear el email
+    msg = EmailMessage()
+    msg['Subject'] = f'Factura #{factura.id}'
+    msg['From'] = 'mmayor200610@gmail.com'
+    msg['To'] = factura.cliente.email
+    msg.set_content(f'Adjunto se encuentra la factura #{factura.id}.')
+
+    # Adjuntar el PDF
+    msg.add_attachment(pdf, maintype='application', subtype='pdf', filename=f'factura_{factura.id}.pdf')
+
+    # Enviar por SMTP
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+            smtp.login('tu_email@gmail.com', 'TU_CONTRASEÑA_O_APP_PASSWORD')
+            smtp.send_message(msg)
+        flash("Factura enviada exitosamente al cliente.", "success")
+    except Exception as e:
+        flash(f"Error al enviar correo: {e}", "danger")
+
+    return redirect(url_for("listar_facturas"))
+
+
+'''
+
+
+
+'''
+
+@app.route("/factura/nueva", methods=["GET", "POST"])
+def nueva_factura():
+    if request.method == "POST":
+        fecha = datetime.strptime(request.form["fecha"], "%Y-%m-%d").date()
+        monto = float(request.form["monto_total"])
+        cliente_id = int(request.form["cliente_id"])
+        orden_id = int(request.form["orden_id"]) if request.form["orden_id"] else None
+
+        factura = Factura(fecha=fecha, monto_total=monto, cliente_id=cliente_id, orden_id=orden_id)
+        db.session.add(factura)
+        db.session.commit()
+        return redirect(url_for("index"))
+
+    clientes = Cliente.query.all()
+    ordenes = OrdenServicio.query.all()
+    return render_template("nueva_factura.html", clientes=clientes, ordenes=ordenes)
+
+    '''

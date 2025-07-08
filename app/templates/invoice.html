@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Factura Estilo Real Editable</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 40px auto;
+    background: #fff;
+    color: #222;
+    font-size: 14px;
+  }
+  h1 {
+    margin-bottom: 5px;
+    font-size: 24px;
+    letter-spacing: 1px;
+  }
+  h2, h3 {
+    margin: 15px 0 5px 0;
+  }
+  p {
+    margin: 4px 0;
+  }
+  .editable {
+    display: inline-block;
+    min-width: 80px;
+    padding: 2px 6px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #f9f9f9;
+    cursor: text;
+    outline: none;
+    font-family: monospace;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+  }
+  thead th {
+    background: #f0f0f0;
+    border-bottom: 2px solid #ccc;
+    padding: 8px 6px;
+    text-align: left;
+  }
+  tbody td {
+    border-bottom: 1px solid #ddd;
+    padding: 6px 6px;
+  }
+  tbody td[contenteditable="true"] {
+    background: #fffbea;
+    border: 1px solid #ddd;
+    cursor: text;
+  }
+  td.number, th.number {
+    text-align: right;
+    font-family: monospace;
+  }
+  .totals {
+    margin-top: 20px;
+    max-width: 300px;
+    float: right;
+    font-size: 16px;
+  }
+  .totals div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .totals .label {
+    font-weight: 600;
+  }
+  .clearfloat {
+    clear: both;
+  }
+  footer {
+    margin-top: 50px;
+    font-style: italic;
+    text-align: center;
+    color: #666;
+  }
+  button {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background-color: #007bff;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+</style>
+</head>
+<body>
+
+<h1>DEMOLITION AND REMOVAL SERVICES CORP</h1>
+<p>7262 NW 3 ST, Miami FL 33126<br>
+   Tel: (786) 348-5040<br>
+   Email: alex@gmail.com</p>
+
+<h2>🧾 Factura #<span class="editable" contenteditable="true" id="invoiceNumber">3</span></h2>
+<p>
+  Fecha: <span class="editable" contenteditable="true" id="date">2025-06-30</span><br>
+  Vencimiento: <span class="editable" contenteditable="true" id="dueDate">2025-06-30</span><br>
+  Email Cliente: <span class="editable" contenteditable="true" id="clientEmail">mmayor200610@gmail.com</span>
+</p>
+
+
+<p>
+  Dirección: <span class="editable" contenteditable="true" id="address">Direccion_2</span><br>
+  Estado: <span class="editable" contenteditable="true" id="status">Completada</span><br>
+  Cliente: <span class="editable" contenteditable="true" id="client">cl_1</span><br>
+  Chofer: <span class="editable" contenteditable="true" id="driver">chofer_1</span><br>
+  Camión: <span class="editable" contenteditable="true" id="truck">Camion 1</span>
+</p>
+
+<table id="items">
+  <thead>
+    <tr>
+      <th>Descripción</th>
+      <th class="number">Precio Unitario</th>
+      <th class="number">Cantidad</th>
+      <th class="number">Monto</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td contenteditable="true" class="desc">flat roof</td>
+      <td contenteditable="true" class="price number">$250.00</td>
+      <td contenteditable="true" class="qty number">2</td>
+      <td class="amount number">$500.00</td>
+    </tr>
+  </tbody>
+</table>
+
+<button onclick="addItemRow()">➕ Agregar Ítem</button>
+
+<div class="totals">
+  <div><div class="label">Subtotal:</div> <div id="subtotal">$500.00</div></div>
+  <div><div class="label">Monto Pagado:</div> <div contenteditable="true" class="editable" id="amountPaid">$500.00</div></div>
+  <div><div class="label">Balance Pendiente:</div> <div id="balance">$0.00</div></div>
+</div>
+
+<div class="clearfloat"></div>
+
+<footer>Gracias por su preferencia. Para consultas o pagos, contáctenos.</footer>
+
+<script>
+  function formatMoney(value) {
+    const number = Number(value);
+    return isNaN(number) ? '$0.00' : '$' + number.toFixed(2);
+  }
+
+  function parseMoney(text) {
+    return Number(text.replace(/[^0-9.-]+/g,"")) || 0;
+  }
+
+  function updateAmounts() {
+    let subtotal = 0;
+    const rows = document.querySelectorAll('#items tbody tr');
+
+    rows.forEach(row => {
+      const priceCell = row.querySelector('.price');
+      const qtyCell = row.querySelector('.qty');
+      const amountCell = row.querySelector('.amount');
+
+      const price = parseMoney(priceCell.textContent);
+      const qty = parseFloat(qtyCell.textContent) || 0;
+      const amount = price * qty;
+
+      amountCell.textContent = formatMoney(amount);
+      subtotal += amount;
+    });
+
+    document.getElementById('subtotal').textContent = formatMoney(subtotal);
+
+    const paidText = document.getElementById('amountPaid').textContent;
+    const paid = parseMoney(paidText);
+
+    const balance = subtotal - paid;
+    document.getElementById('balance').textContent = formatMoney(balance);
+  }
+
+  function addListenersToCell(cell) {
+    cell.addEventListener('input', updateAmounts);
+  }
+
+  function addItemRow() {
+    const tbody = document.querySelector('#items tbody');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td contenteditable="true" class="desc">Nuevo ítem</td>
+      <td contenteditable="true" class="price number">$0.00</td>
+      <td contenteditable="true" class="qty number">1</td>
+      <td class="amount number">$0.00</td>
+    `;
+    tbody.appendChild(row);
+
+    // Agregar eventos para actualización automática
+    row.querySelectorAll('[contenteditable="true"]').forEach(addListenersToCell);
+
+    updateAmounts(); // Recalcula con nueva fila
+  }
+
+  // Inicializar eventos en las celdas existentes
+  document.querySelectorAll('#items tbody td[contenteditable="true"], #amountPaid').forEach(addListenersToCell);
+
+  // Inicial
+  updateAmounts();
+</script>
+
+</body>
+</html>

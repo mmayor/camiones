@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+
+{% block title %}Calendario de Facturas{% endblock %}
+
+{% block content %}
+  <h1 class="text-center my-4">Calendario de Facturas</h1>
+  <div id="calendar"></div>
+
+  <!-- FullCalendar CSS y JS -->
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var calendarEl = document.getElementById('calendar');
+
+      function colorPorEstado(estado) {
+        switch (estado.toLowerCase()) {
+          case 'pendiente': return '#f28b82';
+          case 'enviada': return '#fbbc04';
+          case 'pagada': return '#81c995';
+          default: return '#bdbdbd';
+        }
+      }
+
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        dateClick: function(info) {
+          window.location.href = `/facturas/dia/${info.dateStr}`;
+        },
+        events: '/api/facturas/numeros_por_dia',
+        eventDisplay: 'block',
+        dayMaxEventRows: true,
+
+        eventDidMount: function(info) {
+          const estado = info.event.extendedProps.estado || 'pendiente';
+          const bgColor = colorPorEstado(estado);
+          info.el.style.backgroundColor = bgColor;
+          info.el.style.borderColor = bgColor;
+          info.el.style.color = '#000';
+        },
+
+        eventContent: function(arg) {
+          return {
+            html: `<div style="font-size: 1em; white-space: normal; font-weight: bold;">${arg.event.title}</div>`
+          };
+        }
+      });
+
+      calendar.render();
+    });
+  </script>
+
+  <style>
+    #calendar {
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    .fc .fc-daygrid-day-frame {
+      min-height: 80px;
+    }
+
+    @media (max-width: 768px) {
+      .fc-toolbar-title {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+{% endblock %}

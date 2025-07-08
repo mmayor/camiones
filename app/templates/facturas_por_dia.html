@@ -1,0 +1,508 @@
+{% extends "layout.html" %}
+
+{% block title %}Facturas del día {{ fecha }}{% endblock %}
+
+{% block content %}
+<div class="text-center my-4 px-2">
+  <h1 class="fw-bold text-primary-emphasis fs-4 fs-md-3 text-wrap">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-journal-text me-2" viewBox="0 0 16 16">
+      <path d="M5 8V7h6v1H5zm0 2v-1h6v1H5z"/>
+      <path d="M3 0h10a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.5.5H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12.5a1 1 0 0 0 1 1h12V2a1 1 0 0 0-1-1H3z"/>
+    </svg>
+    Facturas del <span class="text-info">{{ fecha }}</span> — 
+    <span class="text-success">{{ facturas|length }} factura{{ 's' if facturas|length != 1 }}</span>
+  </h1>
+</div>
+
+<div id="facturas-container" class="container px-2 px-sm-4 my-4">
+  {% for factura in facturas %}
+  <div class="libreta card border-0 shadow-lg rounded-4 p-3 p-sm-4 mb-5 
+              {% if factura.estado|lower == 'pendiente' %}estado-pendiente
+              {% elif factura.estado|lower == 'enviada' %}estado-enviada
+              {% elif factura.estado|lower == 'pagada' %}estado-pagada
+              {% endif %}" data-factura-id="{{ factura.id }}">
+              
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2 gap-md-4 mb-3">
+      <h4 class="fw-bold text-primary mb-0">📄 Factura #<span contenteditable="true" class="editable factura-numero">{{ factura.numero }}</span></h4>
+      
+      <div class="d-flex flex-wrap gap-2">
+        <a href="/factura/{{ factura.id }}/pdf" target="_blank" class="btn btn-sm btn-outline-dark w-100 w-md-auto">Ver PDF</a>
+        <button class="btn btn-sm btn-outline-success guardar-btn w-100 w-md-auto">💾 Guardar</button>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-12 col-md-4">
+        <label>Cliente:</label>
+        <select class="form-select factura-cliente-select">
+          {% for cliente in clientes %}
+            <option value="{{ cliente.id }}" {% if factura.cliente and cliente.id == factura.cliente.id %}selected{% endif %}>{{ cliente.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="col-12 col-md-4">
+        <label>Chofer:</label>
+        <select class="form-select factura-chofer-select">
+          {% for chofer in choferes %}
+            <option value="{{ chofer.id }}" {% if factura.chofer and chofer.id == factura.chofer.id %}selected{% endif %}>{{ chofer.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label>Dirección:</label>
+        <span contenteditable="true" class="editable form-control factura-direccion">{{ factura.direccion or '' }}</span>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label>Fecha:</label>
+        <input type="date" class="form-control factura-fecha" value="{{ factura.fecha }}">
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label>Vence:</label>
+        <input type="date" class="form-control factura-due-date" value="{{ factura.due_date or "" }}">
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label>Monto pagado:</label>
+        <span contenteditable="true" class="editable form-control factura-monto-pagado">{{ "%.2f"|format(factura.monto_pagado or 0.0) }}</span>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <span class="badge bg-secondary px-3 py-2 fs-6">Estado: <strong>{{ factura.estado }}</strong></span>
+    </div>
+
+    <div class="table-responsive mt-4">
+      <table class="table table-hover factura-items-table">
+        <thead class="table-light">
+          <tr>
+            <th>Item</th>
+            <th>Descripción</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if factura.items %}
+            {% for item in factura.items %}
+            <tr>
+              <td contenteditable="true" class="item-nombre">{{ item.item }}</td>
+              <td contenteditable="true" class="item-desc">{{ item.descripcion }}</td>
+              <td contenteditable="true" class="item-precio">{{ "%.2f"|format(item.precio_unitario) }}</td>
+              <td contenteditable="true" class="item-cantidad">{{ item.cantidad }}</td>
+              <td class="item-total">{{ "%.2f"|format(item.total) }}</td>
+              <td><button class="btn btn-sm btn-outline-danger btn-eliminar-item">🗑</button></td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td contenteditable="true" class="item-nombre"></td>
+              <td contenteditable="true" class="item-desc"></td>
+              <td contenteditable="true" class="item-precio">0.00</td>
+              <td contenteditable="true" class="item-cantidad">1</td>
+              <td class="item-total">0.00</td>
+              <td><button class="btn btn-sm btn-outline-danger btn-eliminar-item">🗑</button></td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3 flex-column flex-sm-row gap-2">
+      <button class="btn btn-sm btn-outline-primary btn-agregar-item">➕ Agregar Ítem</button>
+      <h5 class="mb-0">Total: $<span class="factura-total">{{ "%.2f"|format(factura.monto_total) }}</span></h5>
+    </div>
+
+  </div>
+  {% else %}
+    <p class="text-center text-muted mt-5">No hay facturas para este día.</p>
+  {% endfor %}
+</div>
+
+<div class="text-center mb-5">
+  <button id="btn-nueva-factura" class="btn btn-outline-primary">+ Agregar Nueva Factura</button>
+</div>
+
+
+<script>
+  // Función para extraer el primer número de una cadena (de la dirección)
+  function extraerNumeroDeDireccion(texto) {
+    const match = texto.match(/\d+/);
+    return match ? match[0] : "";
+  }
+
+  // Función para recalcular total del item (precio * cantidad)
+  function recalcularFila(row) {
+    const precio = parseFloat(row.querySelector('.item-precio').innerText) || 0;
+    const cantidad = parseInt(row.querySelector('.item-cantidad').innerText) || 0;
+    const total = (precio * cantidad).toFixed(2);
+    row.querySelector('.item-total').innerText = total;
+  }
+
+  // Recalcular totales factura
+  function recalcularFacturaTotal(libreta) {
+    let suma = 0;
+    libreta.querySelectorAll('tbody tr').forEach(row => {
+      const total = parseFloat(row.querySelector('.item-total').innerText) || 0;
+      suma += total;
+    });
+    libreta.querySelector('.factura-total').innerText = suma.toFixed(2);
+  }
+
+  // Actualizar número factura cuando cambia la dirección
+  function setupDireccionListeners() {
+  document.querySelectorAll('.factura-direccion').forEach(direccionSpan => {
+    const actualizarNumero = async () => {
+      const libreta = direccionSpan.closest('.libreta');
+      const numeroSpan = libreta.querySelector('.factura-numero');
+      const direccionText = direccionSpan.innerText.trim();
+
+      const numeroBase = extraerNumeroDeDireccion(direccionText);
+      if (!numeroBase) return;
+
+      let nuevoNumero = numeroBase;
+      let sufijo = 65; // A
+
+      // Consulta al backend para asegurarte de que el número es único
+      async function numeroExiste(numero) {
+        const res = await fetch(`/api/factura/existe_numero/${numero}`);
+        if (!res.ok) return false;
+        const data = await res.json();
+        return data.existe;
+      }
+
+      while (await numeroExiste(nuevoNumero)) {
+        nuevoNumero = `${numeroBase}${String.fromCharCode(sufijo)}`;
+        sufijo++;
+      }
+
+      numeroSpan.innerText = nuevoNumero;
+    };
+
+    direccionSpan.addEventListener('input', actualizarNumero);
+    direccionSpan.addEventListener('keyup', actualizarNumero);
+  });
+}
+
+function extraerNumeroDeDireccion(texto) {
+  const match = texto.match(/\d+/);
+  return match ? match[0] : null;
+}
+
+
+  // Recalcula el estado y actualiza el color de fondo según el monto
+function actualizarEstadoVisual(libreta) {
+  const totalTexto = libreta.querySelector('.factura-total')?.innerText || '0';
+  const pagado = parseFloat(libreta.querySelector('.factura-monto-pagado')?.innerText || '0');
+  const total = parseFloat(totalTexto) || 0;
+
+  let estado = 'pendiente';
+  if (pagado >= total) {
+    estado = 'pagada';
+  } 
+
+  libreta.classList.remove('estado-pendiente', 'estado-enviada', 'estado-pagada');
+  libreta.classList.add(`estado-${estado}`);
+}
+
+  // Evento para agregar nuevo item a una factura
+  function setupAgregarItemButtons() {
+  document.querySelectorAll('.btn-agregar-item').forEach(btn => {
+    btn.replaceWith(btn.cloneNode(true)); // Elimina listeners antiguos
+  });
+
+  document.querySelectorAll('.btn-agregar-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const libreta = btn.closest('.libreta');
+      const tbody = libreta.querySelector('tbody');
+      const nuevaFila = document.createElement('tr');
+      nuevaFila.innerHTML = `
+        <td contenteditable="true" class="item-nombre"></td>
+        <td contenteditable="true" class="item-desc"></td>
+        <td contenteditable="true" class="item-precio">0.00</td>
+        <td contenteditable="true" class="item-cantidad">1</td>
+        <td class="item-total">0.00</td>
+        <td><button class="btn btn-danger btn-sm btn-eliminar-item">Eliminar</button></td>
+      `;
+      tbody.appendChild(nuevaFila);
+
+      // Evento eliminar
+      nuevaFila.querySelector('.btn-eliminar-item').addEventListener('click', () => {
+        nuevaFila.remove();
+        recalcularFacturaTotal(libreta);
+      });
+
+      // Recalcular precio y cantidad
+      ['item-precio', 'item-cantidad'].forEach(cls => {
+        nuevaFila.querySelector(`.${cls}`).addEventListener('input', () => {
+          recalcularFila(nuevaFila);
+          recalcularFacturaTotal(libreta);
+        });
+      });
+    });
+  });
+}
+
+
+  // Eliminar item
+  function setupEliminarItemButtons() {
+    document.querySelectorAll('.btn-eliminar-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const fila = btn.closest('tr');
+        const libreta = btn.closest('.libreta');
+        fila.remove();
+        recalcularFacturaTotal(libreta);
+      });
+    });
+  }
+
+  // Recalcular al editar precio o cantidad existentes
+  function setupEditarItemFields() {
+    document.querySelectorAll('tr').forEach(row => {
+      ['item-precio', 'item-cantidad'].forEach(cls => {
+        const el = row.querySelector(`.${cls}`);
+        if (el) {
+          el.addEventListener('input', () => {
+            const libreta = row.closest('.libreta');
+            recalcularFila(row);
+            recalcularFacturaTotal(libreta);
+          });
+        }
+      });
+    });
+  }
+
+  // Guardar cambios
+  function setupGuardarBtns() {
+  document.querySelectorAll('.guardar-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const libreta = btn.closest('.libreta');
+      const facturaId = libreta.dataset.facturaId || null;
+
+      const numero = libreta.querySelector('.factura-numero').innerText.trim();
+      const clienteSelect = libreta.querySelector('.factura-cliente-select');
+      const clienteId = clienteSelect ? clienteSelect.value : null;
+
+      const choferSelect = libreta.querySelector('.factura-chofer-select');
+      const choferId = choferSelect ? choferSelect.value : null;
+
+      const direccion = libreta.querySelector('.factura-direccion').innerText.trim();
+      // const fecha = libreta.querySelector('.factura-fecha').innerText.trim();
+      // const due_date = libreta.querySelector('.factura-due-date')?.innerText.trim() || null;
+      const fecha = libreta.querySelector('.factura-fecha')?.value || '';
+      const due_date = libreta.querySelector('.factura-due-date')?.value || '';
+
+      console.log('Chofer ID capturado:', choferId); // 👈 importante
+
+      const items = [];
+      libreta.querySelectorAll('tbody tr').forEach(row => {
+        items.push({
+          item: row.querySelector('.item-nombre').innerText.trim(),
+          descripcion: row.querySelector('.item-desc').innerText.trim(),
+          precio_unitario: parseFloat(row.querySelector('.item-precio').innerText) || 0,
+          cantidad: parseInt(row.querySelector('.item-cantidad').innerText) || 0,
+        });
+      });
+
+      const monto_pagado = parseFloat(libreta.querySelector('.factura-monto-pagado')?.innerText) || 0;
+
+      const payload = { numero, cliente_id: clienteId, chofer_id: choferId, direccion, fecha, due_date, monto_pagado, items};
+
+      const url = facturaId ? `/api/factura/${facturaId}/editar` : `/api/factura/nueva`;
+      const method = facturaId ? 'POST' : 'PUT';
+      console.log(payload)
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        alert('Factura guardada correctamente');
+
+        // ✅ Actualiza la clase del fondo según estado del backend
+        libreta.classList.remove('estado-pendiente', 'estado-enviada', 'estado-pagada');
+        if (data.estado) {
+          libreta.classList.add(`estado-${data.estado.toLowerCase()}`);
+        }
+
+        // ✅ Si es nueva, recarga para obtener ID
+        if (!facturaId) location.reload();
+      } else {
+        alert('Error guardando factura');
+      }
+    });
+  });
+}
+
+
+  // Agregar nueva factura (vacía)
+  function setupNuevaFacturaBtn() {
+    document.getElementById('btn-nueva-factura').addEventListener('click', () => {
+      const cont = document.getElementById('facturas-container');
+
+      const nuevaFacturaHTML = `
+        <div class="libreta p-3 mb-4 rounded shadow-sm border estado-pendiente" data-factura-id="">
+          <h2>Factura #<span contenteditable="true" class="editable factura-numero"></span></h2>
+          <p>
+            Cliente:
+            <select class="form-select factura-cliente-select" style="width:auto; display:inline-block;">
+              <option value="" selected>Seleccione cliente</option>
+              {% for cliente in clientes %}
+                <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+              {% endfor %}
+            </select>
+          </p>
+          
+          <p>
+            Chofer:
+            <select class="form-select factura-chofer-select" style="width:auto; display:inline-block;">
+              <option value="" selected>Seleccione chofer</option>
+              {% for chofer in choferes %}
+                <option value="{{ chofer.id }}">{{ chofer.nombre }}</option>
+              {% endfor %}
+            </select>
+          </p>
+          <p>Dirección: <span contenteditable="true" class="editable factura-direccion"></span></p>
+          <p>
+  Date:
+  <input type="date" class="form-control form-control-sm factura-fecha" value="{{ fecha }}">
+</p>
+
+<p>
+  Due Date:
+  <input type="date" class="form-control form-control-sm factura-due-date">
+</p>
+
+
+
+          <table class="table table-sm table-bordered mt-3 factura-items-table">
+            <thead class="table-light">
+              <tr>
+                <th>Item</th>
+                <th>Descripción</th>
+                <th>Precio Unitario</th>
+                <th>Cantidad</th>
+                <th>Total</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <button class="btn btn-sm btn-success btn-agregar-item">Agregar Ítem</button>
+
+          <p><strong>Total factura:</strong> <span class="factura-total">0.00</span></p>
+
+          <button class="btn btn-primary guardar-btn mt-2">Guardar Cambios</button>
+        </div>
+      `;
+
+      cont.insertAdjacentHTML('beforeend', nuevaFacturaHTML);
+
+      // Agregar listeners a nuevos botones creados dinámicamente
+      const nuevaLibre = cont.lastElementChild;
+
+      nuevaLibre.querySelector('.btn-agregar-item').addEventListener('click', () => {
+        const tbody = nuevaLibre.querySelector('tbody');
+        const nuevaFila = document.createElement('tr');
+        nuevaFila.innerHTML = `
+          <td contenteditable="true" class="item-nombre"></td>
+          <td contenteditable="true" class="item-desc"></td>
+          <td contenteditable="true" class="item-precio">0.00</td>
+          <td contenteditable="true" class="item-cantidad">1</td>
+          <td class="item-total">0.00</td>
+          <td><button class="btn btn-danger btn-sm btn-eliminar-item">Eliminar</button></td>
+        `;
+        tbody.appendChild(nuevaFila);
+
+        nuevaFila.querySelector('.btn-eliminar-item').addEventListener('click', () => {
+          nuevaFila.remove();
+          recalcularFacturaTotal(nuevaLibre);
+        });
+
+        ['item-precio', 'item-cantidad'].forEach(cls => {
+          nuevaFila.querySelector(`.${cls}`).addEventListener('input', () => {
+            recalcularFila(nuevaFila);
+            recalcularFacturaTotal(nuevaLibre);
+          });
+        });
+      });
+
+      nuevaLibre.querySelectorAll('.btn-eliminar-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const fila = btn.closest('tr');
+          const libreta = btn.closest('.libreta');
+          fila.remove();
+          recalcularFacturaTotal(libreta);
+        });
+      });
+
+      nuevaLibre.querySelector('.guardar-btn').addEventListener('click', async () => {
+        const libreta = nuevaLibre;
+
+        const numero = libreta.querySelector('.factura-numero').innerText.trim();
+        const clienteSelect = libreta.querySelector('.factura-cliente-select');
+        const clienteId = clienteSelect ? clienteSelect.value : null;
+        const direccion = libreta.querySelector('.factura-direccion').innerText.trim();
+       // # const fecha = libreta.querySelector('.factura-fecha').innerText.trim();
+        const fecha = libreta.querySelector('.factura-fecha')?.value || '';
+        // const due_date = libreta.querySelector('.factura-due-date')?.value || '';
+        const due_date = libreta.querySelector('.factura-due-date')?.value || null;
+        const choferSelect = libreta.querySelector('.factura-chofer-select');
+        const choferId = libreta.querySelector('.factura-chofer-select')?.value || null;
+
+        console.log('Chofer ID capturado:', choferId); // 👈 importante
+        const items = [];
+        libreta.querySelectorAll('tbody tr').forEach(row => {
+          items.push({
+            item: row.querySelector('.item-nombre').innerText.trim(),
+            descripcion: row.querySelector('.item-desc').innerText.trim(),
+            precio_unitario: parseFloat(row.querySelector('.item-precio').innerText) || 0,
+            cantidad: parseInt(row.querySelector('.item-cantidad').innerText) || 0,
+          });
+        });
+
+        const payload = { numero, cliente_id: clienteId, chofer_id: choferId, direccion, fecha, due_date, items};
+        console.log(payload)
+        const res = await fetch(`/api/factura/nueva`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (res.ok) {
+          alert('Factura creada correctamente');
+          actualizarEstadoVisual(libreta);
+          location.reload();
+        } else {
+          alert('Error creando factura');
+        }
+      });
+
+      // Setup listeners for new elements
+      setupDireccionListeners();
+      setupAgregarItemButtons();
+      setupEliminarItemButtons();
+      setupEditarItemFields();
+      setupGuardarBtns();
+    });
+  }
+
+  // Inicialización
+  setupDireccionListeners();
+  setupAgregarItemButtons();
+  setupEliminarItemButtons();
+  setupEditarItemFields();
+  setupGuardarBtns();
+  setupNuevaFacturaBtn();
+
+</script>
+
+{% endblock %}

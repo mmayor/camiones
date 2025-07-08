@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Factura #{{ factura.numero }}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      color: #333;
+    }
+    header {
+      border-bottom: 2px solid #000;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    .info {
+      margin-bottom: 20px;
+    }
+    .info p {
+      margin: 5px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #888;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    .total {
+      text-align: right;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .footer {
+      font-size: 12px;
+      text-align: center;
+      margin-top: 40px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Factura #{{ factura.numero }}</h1>
+    <p>Fecha: {{ factura.fecha.strftime('%Y-%m-%d') }}</p>
+    {% if factura.due_date %}
+      <p>Vence: {{ factura.due_date.strftime('%Y-%m-%d') }}</p>
+    {% endif %}
+  </header>
+
+  <div class="info">
+    <p><strong>Cliente:</strong> {{ factura.cliente.nombre }}</p>
+    <p><strong>Dirección:</strong> {{ factura.direccion }}</p>
+    {% if factura.chofer %}
+      <p><strong>Chofer:</strong> {{ factura.chofer.nombre }}</p>
+    {% endif %}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Ítem</th>
+        <th>Descripción</th>
+        <th>Precio Unitario</th>
+        <th>Cantidad</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in factura.items %}
+      <tr>
+        <td>{{ item.item }}</td>
+        <td>{{ item.descripcion }}</td>
+        <td>${{ '%.2f'|format(item.precio_unitario) }}</td>
+        <td>{{ item.cantidad }}</td>
+        <td>${{ '%.2f'|format(item.precio_unitario * item.cantidad) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p class="total">Total: ${{ '%.2f'|format(factura.monto_total) }}</p>
+  <p class="total">Pagado: ${{ '%.2f'|format(factura.monto_pagado) }}</p>
+  <p class="total">Estado: {{ factura.estado|capitalize }}</p>
+
+  <div class="footer">
+    <p>Gracias por su preferencia</p>
+  </div>
+</body>
+</html>

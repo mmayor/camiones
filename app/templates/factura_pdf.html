@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura #{{ factura.id }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #007bff;
+            margin: 0;
+            font-size: 24px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 2px solid #007bff;
+            margin: 20px 0;
+        }
+
+        .info {
+            margin-bottom: 30px;
+        }
+
+        .info p {
+            margin: 3px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        thead {
+            background-color: #f0f0f0;
+        }
+
+        tfoot td {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+
+        tfoot td:last-child {
+            text-align: right;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            margin-top: 50px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2>🔧 DEMOLITION AND REMOVAL SERVICES CORP</h2>
+    <p>7262 NW 3 ST Miami FL 33126<br>
+    Tel: (786) 348-5040<br>
+    Email: alex@gmail.com</p>
+    <hr>
+</div>
+
+<div class="info">
+    <p><strong>Factura Nº:</strong> {{ factura.id }}</p>
+    <p><strong>Fecha:</strong> {{ factura.fecha }}</p>
+    <p><strong>Fecha de vencimiento:</strong> {{ factura.due_date }}</p>
+    <p><strong>Cliente:</strong> {{ factura.cliente.nombre }}</p>
+    <p><strong>Email:</strong> {{ factura.cliente.email or "N/A" }}</p>
+</div>
+
+<h3>🧾 Detalles de Factura</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Descripción</th>
+            <th>Precio Unitario</th>
+            <th>Cantidad</th>
+            <th>Monto</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in factura.items %}
+        <tr>
+            <td>{{ item.nombre }}</td>
+            <td>{{ item.descripcion }}</td>
+            <td>${{ "%.2f"|format(item.precio_unitario) }}</td>
+            <td>{{ item.cantidad }}</td>
+            <td>${{ "%.2f"|format(item.precio_unitario * item.cantidad) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="4">Subtotal</td>
+            <td>${{ "%.2f"|format(factura.monto_total) }}</td>
+        </tr>
+        <tr>
+            <td colspan="4">Monto Pagado</td>
+            <td>${{ "%.2f"|format(factura.monto_pagado or 0) }}</td>
+        </tr>
+        <tr>
+            <td colspan="4">Balance Pendiente</td>
+            <td>${{ "%.2f"|format(factura.monto_total - (factura.monto_pagado or 0)) }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+<div class="footer">
+    Gracias por su preferencia. Para consultas o pagos, contáctenos.<br>
+    DEMOLITION AND REMOVAL SERVICES CORP · Miami FL
+</div>
+
+</body>
+</html>

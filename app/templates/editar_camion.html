@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ 'Editar' if camion else 'Nuevo' }} Camión{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="mb-4">
+    <h2 class="fw-bold">{{ '✏️ Editar' if camion else '➕ Nuevo' }} Camión</h2>
+    <p class="text-muted">Complete la información del camión.</p>
+  </div>
+
+  <form method="post" class="needs-validation" novalidate>
+    <div class="form-floating mb-3">
+      <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre del camión" required
+             value="{{ camion.nombre if camion else '' }}">
+      <label for="nombre">🚛 Nombre del camión</label>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-floating mb-3">
+          <input type="number" step="any" class="form-control" id="lat" name="lat" placeholder="Latitud"
+                 value="{{ camion.lat if camion else '' }}">
+          <label for="lat">🌍 Latitud (opcional)</label>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="form-floating mb-3">
+          <input type="number" step="any" class="form-control" id="lon" name="lon" placeholder="Longitud"
+                 value="{{ camion.lon if camion else '' }}">
+          <label for="lon">🌍 Longitud (opcional)</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-success">
+        <i class="bi bi-save"></i> Guardar
+      </button>
+      <a href="{{ url_for('listar_camiones') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left-circle"></i> Cancelar
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

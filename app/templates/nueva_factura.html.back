@@ -1,0 +1,25 @@
+<h1>Crear Nueva Factura</h1>
+<form method="post">
+    <label>Fecha: <input type="date" name="fecha" required></label><br><br>
+    <label>Monto Total: <input type="number" name="monto_total" step="0.01" required></label><br><br>
+
+    <label>Cliente:
+        <select name="cliente_id" required>
+            {% for cliente in clientes %}
+            <option value="{{ cliente.id }}">{{ cliente.nombre }}</option>
+            {% endfor %}
+        </select>
+    </label><br><br>
+
+    <label>Orden (opcional):
+        <select name="orden_id">
+            <option value="">-- Sin orden --</option>
+            {% for orden in ordenes %}
+            <option value="{{ orden.id }}">{{ orden.id }} - {{ orden.direccion }}</option>
+            {% endfor %}
+        </select>
+    </label><br><br>
+
+    <button type="submit">Crear Factura</button>
+</form>
+<a href="{{ url_for('index') }}">Volver</a>

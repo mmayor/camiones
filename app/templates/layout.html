@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}Gestión de Servicios{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #eceef0, #eeeeee);
+      background-attachment: fixed;
+      font-family: 'Helvetica Neue', sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      margin: 0;
+    }
+
+    header {
+      background-color: var(--bs-dark);
+      color: white;
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    @media (min-width: 768px) {
+      header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+
+    @media (min-width: 768px) {
+      .main-container {
+        flex-direction: row;
+      }
+    }
+
+    .sidebar {
+      width: 100%;
+      max-width: 250px;
+      background-color: var(--bs-dark);
+      color: white;
+      padding: 1.5rem 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .sidebar {
+        width: 250px;
+      }
+    }
+
+    .sidebar a {
+      color: #adb5bd;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+    }
+
+    .sidebar a:hover {
+      color: white;
+    }
+
+    .sidebar a i {
+      margin-right: 8px;
+    }
+
+    .content {
+      flex-grow: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      width: 100%;
+    }
+
+    .editable {
+      border-bottom: 1px dashed #aaa;
+      cursor: text;
+      min-width: 150px;
+      display: inline-block;
+      padding: 2px 4px;
+      white-space: nowrap;
+    }
+
+    .estado-pendiente {
+      background-color: #f28b82;
+    }
+
+    .estado-enviada {
+      background-color: #fbbc04;
+    }
+
+    .estado-pagada {
+      background-color: #81c995;
+    }
+
+    .theme-toggle {
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h4 class="mb-2 mb-md-0"><i class="bi bi-truck"></i> Gestión de Servicios</h4>
+  <div class="d-flex align-items-center gap-2">
+    <i class="bi bi-person-circle fs-4"></i>
+    <button class="btn btn-outline-light btn-sm" onclick="logout()">Cerrar sesión</button>
+  </div>
+</header>
+
+<div class="main-container">
+  <div class="sidebar">
+    <a href="{{ url_for('index') }}"><i class="bi bi-box-seam"></i> Órdenes</a>
+    <a href="{{ url_for('listar_camiones') }}"><i class="bi bi-truck-front"></i> Camiones</a>
+    <a href="{{ url_for('listar_choferes') }}"><i class="bi bi-person-badge"></i> Choferes</a>
+    <a href="{{ url_for('listar_clientes') }}"><i class="bi bi-person-circle"></i> Clientes</a>
+    <a href="{{ url_for('listar_facturas') }}"><i class="bi bi-receipt"></i> Facturas</a>
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="height: 100px; max-width: 250px; object-fit: contain;" /> 
+  </div>
+
+  <div class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div id="flash-messages">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">ok 
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  function logout() {
+    alert("Cerrar sesión no implementado (puedes conectar con Flask-login)");
+  }
+
+  setTimeout(() => {
+    const flashMessages = document.getElementById('flash-messages');
+    if (flashMessages) {
+      flashMessages.style.transition = "opacity 0.5s ease";
+      flashMessages.style.opacity = "0";
+      setTimeout(() => flashMessages.remove(), 500);
+    }
+  }, 4000);
+</script>
+</body>
+</html>
